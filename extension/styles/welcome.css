@@ -1,0 +1,387 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: #FFF9E3;
+  color: #1d1d1f;
+  line-height: 1.5;
+  padding: 40px 16px;
+}
+
+.container {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+/* Hero */
+.hero {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.hero-icon {
+  margin-bottom: 8px;
+}
+
+.hero-icon .doge-hero {
+  width: 120px;
+  height: auto;
+}
+
+.hero h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.hero-subtitle {
+  font-size: 15px;
+  color: #6e6e73;
+  max-width: 400px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* Cards */
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: border-color 0.3s, box-shadow 0.3s;
+  border: 1px solid transparent;
+}
+
+
+/* Step 1 success state — green border when key is saved */
+.card.step-complete {
+  border-color: #34d399;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* Step header */
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.step-number {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 14px;
+  background: #1d1d1f;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.step-explainer {
+  font-size: 13px;
+  color: #6e6e73;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+/* API key labels */
+.api-key-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1d1d1f;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.key-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+.key-required {
+  color: #0071e3;
+  background: rgba(0, 113, 227, 0.08);
+}
+
+.key-recommended {
+  color: #0071e3;
+  background: rgba(0, 113, 227, 0.08);
+}
+
+.key-optional {
+  color: #6e6e73;
+  background: #f5f5f7;
+}
+
+.key-desc {
+  font-size: 12px;
+  color: #6e6e73;
+  margin-bottom: 6px;
+}
+
+/* API key inputs */
+.api-key-group {
+  margin-bottom: 8px;
+}
+
+.input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.input-row input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.input-row input:focus {
+  outline: none;
+  border-color: #0071e3;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.12);
+}
+
+.toggle-visibility {
+  padding: 10px 14px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  color: #6e6e73;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.toggle-visibility:hover {
+  background: #f5f5f7;
+}
+
+.help-text {
+  color: #6e6e73;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.help-text a {
+  color: #0071e3;
+  text-decoration: none;
+}
+
+.help-text a:hover {
+  text-decoration: underline;
+}
+
+/* Key saved status */
+.key-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  color: #059669;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Locked state — greyed out until API key added */
+.step-locked {
+  opacity: 0.4;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+/* Summary type selector */
+.summary-type-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summary-type-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #e5e5e7;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.summary-type-option:hover {
+  background: #f5f5f7;
+}
+
+.summary-type-option:has(input:checked) {
+  border-color: #0071e3;
+  background: rgba(0, 113, 227, 0.04);
+}
+
+.summary-type-option input[type="radio"] {
+  accent-color: #0071e3;
+}
+
+.summary-type-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summary-type-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1d1d1f;
+}
+
+.summary-type-desc {
+  font-size: 12px;
+  color: #6e6e73;
+}
+
+/* How to use */
+.shortcut-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 16px 0;
+}
+
+.shortcut-method {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.shortcut-divider {
+  color: #86868b;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+kbd {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #f5f5f7;
+  border: 1px solid #d2d2d7;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 500;
+  color: #1d1d1f;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  line-height: 1.4;
+}
+
+.key-plus {
+  color: #86868b;
+  font-size: 13px;
+  margin: 0 2px;
+}
+
+.shortcut-label {
+  font-size: 12px;
+  color: #6e6e73;
+}
+
+.toolbar-icon-demo {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #f5f5f7;
+  border: 1px solid #d2d2d7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.shortcut-note {
+  text-align: center;
+  margin-top: 8px;
+}
+
+.shortcut-note kbd {
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+/* Try it section */
+.try-it {
+  text-align: center;
+  padding: 12px 0 18px 0;
+}
+
+.try-it p {
+  font-size: 14px;
+  color: #6e6e73;
+  margin-bottom: 16px;
+}
+
+.try-it kbd {
+  padding: 2px 6px;
+  font-size: 13px;
+}
+
+.btn-primary {
+  display: inline-block;
+  padding: 12px 28px;
+  background: #1d1d1f;
+  color: #fff;
+  border: none;
+  border-radius: 980px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover {
+  background: #424245;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 16px 0 8px;
+  font-size: 13px;
+  color: #86868b;
+}
+
+footer a {
+  color: #6e6e73;
+  text-decoration: none;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
+
+.dot {
+  margin: 0 8px;
+}

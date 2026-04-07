@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Such Summary — Settings</title>
+  <link rel="stylesheet" href="styles/options.css">
+</head>
+<body>
+  <div class="container">
+    <header class="hero">
+      <div class="hero-icon">
+        <img src="images/doge-hero.webp" alt="Such Summary" class="doge-hero">
+      </div>
+      <h1>Such Summary</h1>
+      <p class="hero-subtitle">Settings. Very configure.</p>
+    </header>
+
+    <!-- API keys -->
+    <section class="card">
+      <div class="card-header">
+        <h2>API keys</h2>
+      </div>
+
+      <div class="api-key-stack">
+        <div class="api-key-group">
+          <label class="api-key-label" for="claudeApiKey">Anthropic <span class="key-recommended">Recommended</span></label>
+          <p class="help-text api-key-description">Enables fast and best-quality summaries using Claude.</p>
+          <div class="input-row">
+            <input type="password" id="claudeApiKey" placeholder="sk-ant-..." autocomplete="off">
+            <button type="button" class="toggle-visibility" data-target="claudeApiKey" aria-label="Show/hide key">
+              <svg class="eye-icon eye-show" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-icon eye-hide" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
+            </button>
+          </div>
+          <div class="api-key-meta">
+            <div class="api-key-saved" id="anthropicKeySaved">API key saved ✓</div>
+            <p class="help-text api-key-link" id="anthropicKeyLink"><a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Get an Anthropic API key</a></p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="api-usage-inline" id="apiUsageSummary">
+        <p class="help-text api-usage-inline-text">
+          <span id="apiUsageSummaryEmpty">Estimates appear after you summarise a few pages.</span>
+          <a href="#" id="toggleLogs" class="api-usage-link">Show usage logs</a>
+        </p>
+      </div>
+    </section>
+
+    <!-- Usage logs -->
+    <section class="card" id="logsSection" style="display:none">
+      <div class="logs-header">
+        <h2>Usage logs</h2>
+        <button type="button" class="btn-reset" id="clearLogs">Clear all</button>
+      </div>
+      <p class="help-text" style="margin-bottom:8px">Token usage and estimated costs over the last 30 days.</p>
+      <p class="help-text cost-disclaimer" style="margin-bottom:12px">Cost estimates are approximate. Verify actual spend in your <a href="https://console.anthropic.com/" target="_blank" rel="noopener">Anthropic</a> console and set a spend limit on your API key.</p>
+      <div id="logsTotalCost" class="logs-total-cost" style="display:none"></div>
+      <div id="logsContent">
+        <p class="help-text">Loading...</p>
+      </div>
+    </section>
+
+    <!-- Summary type -->
+    <section class="card">
+      <h2>Default summary type</h2>
+      <p class="no-key-message" id="noKeyMessage" style="display:none">Add an API key above to enable summaries.</p>
+      <div class="summary-type-options">
+        <label class="summary-type-option">
+          <input type="radio" name="summaryType" value="high_fidelity">
+          <div class="summary-type-info">
+            <span class="summary-type-name">Best quality</span>
+            <span class="summary-type-desc">Claude Opus. Takes 5-20 seconds.</span>
+          </div>
+        </label>
+        <label class="summary-type-option" id="optionFast">
+          <input type="radio" name="summaryType" value="fast" checked>
+          <div class="summary-type-info">
+            <span class="summary-type-name">Fast &#9889;</span>
+            <span class="summary-type-desc">Claude Haiku. Takes 3-10 seconds.</span>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <!-- Domain defaults -->
+    <section class="card" id="domainDefaultsSection">
+      <h2>Domain-specific settings</h2>
+      <p class="help-text" style="margin-bottom:12px">Override the default summary type for specific domains.</p>
+      <div id="domainDefaultsList"></div>
+      <div id="domainDefaultsForm" style="display:none">
+        <div class="domain-form-row">
+          <input type="text" id="domainInput" placeholder="e.g. youtube.com" class="domain-input">
+          <select id="domainTypeSelect" class="domain-select">
+            <option value="fast">Fast</option>
+            <option value="high_fidelity">Best quality</option>
+          </select>
+        </div>
+        <div class="domain-form-actions">
+          <button type="button" class="btn-domain-save" id="domainSaveBtn">Save</button>
+          <button type="button" class="btn-domain-cancel" id="domainCancelBtn">Cancel</button>
+        </div>
+      </div>
+      <button type="button" class="btn-add-domain" id="addDomainBtn">+ Add domain rule</button>
+    </section>
+
+    <!-- Preferences -->
+    <section class="card">
+      <h2>Preferences</h2>
+      <label class="preference-option">
+        <input type="checkbox" id="preferFastForLongArticles">
+        <span>Use fast models for &gt;10,000-word articles</span>
+      </label>
+      <label class="preference-option">
+        <input type="checkbox" id="disableLargeContentWarning">
+        <span>Skip warning for very long articles (&gt;50,000 words)</span>
+      </label>
+      <label class="preference-option">
+        <input type="checkbox" id="disableCostAlerts">
+        <span>Disable usage cost alerts</span>
+      </label>
+    </section>
+
+    <!-- Prompts -->
+    <section class="card">
+      <h2>Prompts</h2>
+      <p class="help-text" style="margin-bottom:12px">Customise the prompts sent to the AI. The article title, author, and content are appended automatically.</p>
+
+      <div class="prompt-group">
+        <div class="prompt-header">
+          <label for="promptTldr">TL;DR prompt</label>
+          <button type="button" class="btn-reset" data-prompt="promptTldr">Reset</button>
+        </div>
+        <textarea id="promptTldr" rows="6"></textarea>
+      </div>
+
+      <div class="prompt-group">
+        <div class="prompt-header">
+          <label for="promptConcise">Summary prompt</label>
+          <button type="button" class="btn-reset" data-prompt="promptConcise">Reset</button>
+        </div>
+        <textarea id="promptConcise" rows="6"></textarea>
+      </div>
+
+      <div class="prompt-group">
+        <div class="prompt-header">
+          <label for="promptQuotes">Key quotes prompt</label>
+          <button type="button" class="btn-reset" data-prompt="promptQuotes">Reset</button>
+        </div>
+        <textarea id="promptQuotes" rows="6"></textarea>
+      </div>
+    </section>
+
+    <div id="toast" class="toast"></div>
+
+    <!-- Footer -->
+    <footer>
+      <a href="https://wow.pjh.is" target="_blank" rel="noopener">AI Wow</a>
+      <span class="dot">&middot;</span>
+      <a href="mailto:wow@pjh.is">Help &amp; bugs</a>
+    </footer>
+  </div>
+
+  <script src="providers.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

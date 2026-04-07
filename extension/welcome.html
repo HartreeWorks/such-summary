@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Such Summary — Welcome</title>
+  <link rel="stylesheet" href="styles/welcome.css">
+</head>
+<body>
+  <div class="container">
+
+    <!-- Hero -->
+    <header class="hero">
+      <div class="hero-icon">
+        <img src="images/doge-hero.webp" alt="Such Summary" class="doge-hero">
+      </div>
+      <h1>Such Summary</h1>
+      <p class="hero-subtitle">Wow. Very long. Plz fix.</p>
+    </header>
+
+    <!-- Step 1: API keys -->
+    <section class="card step" id="step1">
+      <div class="step-header">
+        <span class="step-number">1</span>
+        <h2>Add API keys. So secret.</h2>
+      </div>
+      <p class="step-explainer">Your key is stored locally and sent only to Anthropic. Very safe.</p>
+
+      <div class="api-key-group">
+        <label class="api-key-label">Anthropic API key</label>
+        <div class="input-row">
+          <input type="text" id="claudeApiKey" placeholder="sk-ant-..." autocomplete="off">
+        </div>
+        <p class="help-text">
+          <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Get an Anthropic API key &rarr;</a>
+        </p>
+      </div>
+
+      <div class="key-status" id="keyStatus" style="display:none">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+        </svg>
+        <span>Key saved. Such success.</span>
+      </div>
+    </section>
+
+    <!-- Step 2: Default summary type -->
+    <section class="card step step-locked" id="step2">
+      <div class="step-header">
+        <span class="step-number">2</span>
+        <h2>Speed or quality? You chooz.</h2>
+      </div>
+      <p class="step-explainer">Not sure? Go for quality.</p>
+      <div class="summary-type-options">
+        <label class="summary-type-option">
+          <input type="radio" name="summaryType" value="high_fidelity" checked>
+          <div class="summary-type-info">
+            <span class="summary-type-name">Best quality</span>
+            <span class="summary-type-desc">Claude Opus. Very on point. Some wait (10-20s).</span>
+          </div>
+        </label>
+        <label class="summary-type-option">
+          <input type="radio" name="summaryType" value="fast">
+          <div class="summary-type-info">
+            <span class="summary-type-name">Fast</span>
+            <span class="summary-type-desc">Claude Haiku. Pretty good. Pretty fast (3-10s).</span>
+          </div>
+        </label>
+      </div>
+      <p class="help-text">
+          Want more custom? <a href="#" id="checkSettingsLink">Check settings.</a>
+        </p>
+    </section>
+
+    <!-- Step 3: How to use -->
+    <section class="card step step-locked" id="step3">
+      <div class="step-header">
+        <span class="step-number">3</span>
+        <h2>Very summarise. So easy.</h2>
+      </div>
+      <div class="how-to-use">
+        <div class="shortcut-display">
+          <div class="shortcut-method">
+            <span class="shortcut-keys shortcut-keys-mac" style="display:none"><kbd class="key">&#x2325;</kbd><span class="key-plus">+</span><kbd class="key">S</kbd></span>
+            <span class="shortcut-keys shortcut-keys-other"><kbd class="key">Alt</kbd><span class="key-plus">+</span><kbd class="key">S</kbd></span>
+            <span class="shortcut-label">Keyboard shortcut</span>
+          </div>
+          <div class="shortcut-divider">or</div>
+          <div class="shortcut-method">
+            <div class="toolbar-icon-demo">
+              <img src="icons/icon32.png" alt="Extension icon" width="20" height="20">
+            </div>
+            <span class="shortcut-label">Click the toolbar icon</span>
+          </div>
+        </div>
+        <div class="try-it">
+          <button class="btn-primary" id="tryItBtn">Try on a sample article</button>
+        </div>
+        <p class="help-text shortcut-note">
+          Shortcut doesn't work? Set it at
+          <a href="chrome://extensions/shortcuts" id="shortcutsLink">chrome://extensions/shortcuts</a>.
+        </p>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <a href="#" id="openSettings">Settings</a>
+      <span class="dot">&middot;</span>
+      <a href="https://wow.pjh.is" target="_blank" rel="noopener">AI Wow</a>
+      <span class="dot">&middot;</span>
+      <a href="mailto:wow@pjh.is">Help &amp; bugs</a>
+    </footer>
+
+  </div>
+
+  <script src="providers.js"></script>
+  <script src="welcome.js"></script>
+</body>
+</html>
