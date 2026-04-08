@@ -282,7 +282,7 @@ function ensureBulletList(text) {
 // Provider API functions
 // ---------------------------------------------------------------------------
 
-async function callAnthropic({ apiKey, model, systemPrompt, userPrompt, maxTokens }) {
+async function callAnthropic({ apiKey, model, systemPrompt, userPrompt, maxTokens, signal }) {
   const body = {
     model,
     max_tokens: maxTokens,
@@ -298,6 +298,7 @@ async function callAnthropic({ apiKey, model, systemPrompt, userPrompt, maxToken
       'content-type': 'application/json',
     },
     body: JSON.stringify(body),
+    signal,
   });
 
   const data = await response.json();
@@ -321,7 +322,7 @@ const PROVIDER_CALLERS = {
 // Main summarise function
 // ---------------------------------------------------------------------------
 
-async function summarise(provider, apiKey, model, summaryType, article, customPrompt) {
+async function summarise(provider, apiKey, model, summaryType, article, customPrompt, signal) {
   const wordCount = article.wordCount || 3000; // fallback to medium tier
   const tier = getContentTier(wordCount);
 
@@ -342,7 +343,7 @@ async function summarise(provider, apiKey, model, summaryType, article, customPr
     throw new Error(`Unknown provider: ${provider}`);
   }
 
-  const callerOpts = { apiKey, model, maxTokens, systemPrompt: system, userPrompt: user };
+  const callerOpts = { apiKey, model, maxTokens, systemPrompt: system, userPrompt: user, signal };
   const startTime = Date.now();
   const result = await caller(callerOpts);
   const timeMs = Date.now() - startTime;

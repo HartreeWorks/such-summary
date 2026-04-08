@@ -79,8 +79,6 @@ chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     chrome.tabs.create({ url: chrome.runtime.getURL('welcome.html') });
   }
-  chrome.storage.local.remove(['groqApiKey']);
-  chrome.storage.sync.remove(['showGroqOptions']);
   // Refresh pricing cache on install/update
   getCachedOrDefaultPricing();
 });
@@ -226,18 +224,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const wordCount = Math.max(0, request.wordCount || 0);
 
         const domainDefaults = settings.domainDefaults || { 'youtube.com': 'fast' };
-        const tabUrl = sender.tab.url;
-        if (tabUrl) {
-          try {
-            const hostname = new URL(tabUrl).hostname.replace(/^www\./, '');
-            for (const [domain, type] of Object.entries(domainDefaults)) {
-              if (hostname === domain || hostname.endsWith('.' + domain)) {
-                summaryType = type;
-                break;
-              }
-            }
-          } catch { /* invalid URL, use global default */ }
-        }
+        summaryType = getEffectiveSummaryType(summaryType, domainDefaults, sender.tab.url);
 
         if (settings.preferFastForLongArticles && wordCount > LONG_ARTICLE_FAST_MODEL_THRESHOLD) {
           summaryType = 'fast';
@@ -430,14 +417,28 @@ async function flushUsageEntries(entries) {
 // Summarise article (progressive, parallel requests)
 // ---------------------------------------------------------------------------
 
-const tabsInFlight = new Map(); // tabId → url
+function getEffectiveSummaryType(summaryType, domainDefaults, tabUrl) {
+  if (!tabUrl) return summaryType;
+  try {
+    const hostname = new URL(tabUrl).hostname.replace(/^www\./, '');
+    for (const [domain, type] of Object.entries(domainDefaults)) {
+      if (hostname === domain || hostname.endsWith('.' + domain)) {
+        return type;
+      }
+    }
+  } catch { /* invalid URL, use global default */ }
+  return summaryType;
+}
+
+const tabsInFlight = new Map(); // tabId → { url, abortController }
 
 async function summariseArticle(article, tabId, tabUrl, options = {}) {
-  if (tabsInFlight.has(tabId) && tabsInFlight.get(tabId) === tabUrl) {
-    console.log('Summarisation already in progress for this tab and URL, skipping');
-    return;
+  const existing = tabsInFlight.get(tabId);
+  if (existing && existing.url === tabUrl) {
+    existing.abortController.abort();
   }
-  tabsInFlight.set(tabId, tabUrl);
+  const abortController = new AbortController();
+  tabsInFlight.set(tabId, { url: tabUrl, abortController });
   try {
     const {
       manualSummaryTypeOverride = false,
@@ -449,16 +450,8 @@ async function summariseArticle(article, tabId, tabUrl, options = {}) {
 
     // Check for domain-specific override
     const domainDefaults = settings.domainDefaults || { 'youtube.com': 'fast' };
-    if (!requestedSummaryType && tabUrl) {
-      try {
-        const hostname = new URL(tabUrl).hostname.replace(/^www\./, '');
-        for (const [domain, type] of Object.entries(domainDefaults)) {
-          if (hostname === domain || hostname.endsWith('.' + domain)) {
-            summaryType = type;
-            break;
-          }
-        }
-      } catch { /* invalid URL, use global default */ }
+    if (!requestedSummaryType) {
+      summaryType = getEffectiveSummaryType(summaryType, domainDefaults, tabUrl);
     }
 
     const longArticleFastOverride =
@@ -521,18 +514,8 @@ async function summariseArticle(article, tabId, tabUrl, options = {}) {
       const { provider, model } = preset[type];
       const apiKey = settings.claudeApiKey;
 
-      if (!apiKey) {
-        chrome.tabs.sendMessage(tabId, {
-          action: 'showProgressiveSummary',
-          type,
-          summary: `Error: Anthropic API key required for ${SUMMARY_TYPE_LABELS[summaryType]} mode. Add it in settings.`,
-          showSettingsLink: true,
-        });
-        return;
-      }
-
       try {
-        const result = await summarise(provider, apiKey, model, type, article, customPrompt || null);
+        const result = await summarise(provider, apiKey, model, type, article, customPrompt || null, abortController.signal);
 
         usageEntries.push(createUsageEntry({
           url: tabUrl,
@@ -552,6 +535,7 @@ async function summariseArticle(article, tabId, tabUrl, options = {}) {
           sourceUrl: tabUrl,
         });
       } catch (error) {
+        if (error.name === 'AbortError') return;
         console.error(`Error during ${type} summarisation (${provider}/${model}):`, error);
         const rawMsg = error.message || 'Unknown error';
         const prefix = error instanceof TypeError ? `fetch failed: ${rawMsg}` : rawMsg;
@@ -572,7 +556,8 @@ async function summariseArticle(article, tabId, tabUrl, options = {}) {
     await checkCostThreshold(tabId);
   } finally {
     // Only clear if this is still the active summarisation for the tab
-    if (tabsInFlight.get(tabId) === tabUrl) {
+    const current = tabsInFlight.get(tabId);
+    if (current && current.abortController === abortController) {
       tabsInFlight.delete(tabId);
     }
   }

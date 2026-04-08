@@ -469,28 +469,21 @@
         const msg = document.createElement('div');
         msg.className = 'ph-summarizer-summary-section no-api-key-section';
         const content = document.createElement('div');
-        content.className = 'summary-section-content';
-        content.style.padding = '24px 16px';
-        content.style.textAlign = 'center';
+        content.className = 'summary-section-content no-api-key-content';
 
         const icon = document.createElement('div');
+        icon.className = 'no-api-key-icon';
         icon.textContent = '\ud83d\udd11';
-        icon.style.fontSize = '32px';
-        icon.style.marginBottom = '12px';
         content.appendChild(icon);
 
         const heading = document.createElement('div');
+        heading.className = 'no-api-key-heading';
         heading.textContent = 'No API key configured';
-        heading.style.fontWeight = '600';
-        heading.style.fontSize = '16px';
-        heading.style.marginBottom = '8px';
         content.appendChild(heading);
 
         const para = document.createElement('div');
+        para.className = 'no-api-key-description';
         para.textContent = 'Add your API key in settings to start summarising articles.';
-        para.style.fontSize = '14px';
-        para.style.color = '#6e6e73';
-        para.style.marginBottom = '16px';
         content.appendChild(para);
 
         const btn = document.createElement('button');
@@ -506,22 +499,20 @@
       if (spinner) spinner.style.display = 'none';
     }
 
-    cycleSummaryType() {
-      chrome.runtime.sendMessage({ action: 'cycleSummaryType' }, async (response) => {
-        if (!response) return;
-        if (this.currentArticle) {
-          const warningResult = await this.checkLargeContentWarning(this.currentArticle.wordCount);
-          if (!warningResult.proceed) return;
-          const requestedSummaryType = warningResult.requestedSummaryType || response.summaryType || null;
-          this.currentSummaryType = requestedSummaryType;
-          this.showProgressiveLoading({ summaryType: requestedSummaryType });
-          safeSendMessage({
-            action: 'getSummary',
-            article: this.currentArticle,
-            manualSummaryTypeOverride: true,
-            requestedSummaryType,
-          });
-        }
+    async cycleSummaryType() {
+      if (!this.currentArticle) return;
+      const current = this.currentSummaryType || 'fast';
+      const nextType = current === 'fast' ? 'high_fidelity' : 'fast';
+      const warningResult = await this.checkLargeContentWarning(this.currentArticle.wordCount);
+      if (!warningResult.proceed) return;
+      const requestedSummaryType = warningResult.requestedSummaryType || nextType;
+      this.currentSummaryType = requestedSummaryType;
+      this.showProgressiveLoading({ summaryType: requestedSummaryType });
+      safeSendMessage({
+        action: 'getSummary',
+        article: this.currentArticle,
+        manualSummaryTypeOverride: true,
+        requestedSummaryType,
       });
     }
 

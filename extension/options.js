@@ -25,7 +25,7 @@ let currentDomainDefaults = {};
 document.addEventListener('DOMContentLoaded', () => {
   Promise.all([
     new Promise(resolve => chrome.storage.sync.get(SYNC_KEYS, resolve)),
-    new Promise(resolve => chrome.storage.local.get([...LOCAL_KEYS, 'groqApiKey'], resolve)),
+    new Promise(resolve => chrome.storage.local.get(LOCAL_KEYS, resolve)),
   ]).then(([syncItems, localItems]) => {
     const items = { ...syncItems, ...localItems };
     const summaryType = getDefaultSummaryType(items);
@@ -56,8 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCostEstimates();
 
     const needsCleanup =
-      !!items.groqApiKey ||
-      !!items.showGroqOptions ||
       (items.summaryType && !sanitizeSummaryType(items.summaryType)) ||
       typeof items.preferFastForLongArticles !== 'boolean' ||
       JSON.stringify(items.domainDefaults || {}) !== JSON.stringify(currentDomainDefaults);
@@ -181,8 +179,6 @@ function save() {
   Promise.all([
     new Promise(resolve => chrome.storage.local.set(localData, resolve)),
     new Promise(resolve => chrome.storage.sync.set(syncData, resolve)),
-    new Promise(resolve => chrome.storage.local.remove(['groqApiKey'], resolve)),
-    new Promise(resolve => chrome.storage.sync.remove(['showGroqOptions'], resolve)),
   ]).then(() => {
     Object.assign(lastSavedKeys, localData);
     if (anthropicChanged) {

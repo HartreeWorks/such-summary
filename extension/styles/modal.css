@@ -686,6 +686,28 @@
   color: #7F1D1D;
 }
 
+.no-api-key-content {
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.no-api-key-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.no-api-key-heading {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.no-api-key-description {
+  font-size: 14px;
+  color: #6e6e73;
+  margin-bottom: 16px;
+}
+
 .no-api-key-settings-btn {
   margin-top: 12px;
   padding: 8px 20px;
