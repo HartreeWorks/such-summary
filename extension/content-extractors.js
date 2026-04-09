@@ -230,7 +230,7 @@ window.SummarizerExtractors = (() => {
     return lines.filter(Boolean).join(' ');
   }
 
-  function getYouTubePageDataFromDOM() {
+  function getYouTubePageDataFromDOM(expectedVideoId) {
     try {
       let playerHtml = '';
       let configHtml = '';
@@ -244,7 +244,15 @@ window.SummarizerExtractors = (() => {
           if (playerHtml && configHtml) break;
         } catch { /* ignore Trusted Types errors on external scripts */ }
       }
-      return parseYouTubePageData(playerHtml, configHtml);
+      const pageData = parseYouTubePageData(playerHtml, configHtml);
+      // After SPA navigation, script tags still contain the initial page load's
+      // data. If the parsed video ID doesn't match the current URL, discard it
+      // so the caller falls through to the network fetch.
+      if (expectedVideoId && pageData.parsedVideoId && pageData.parsedVideoId !== expectedVideoId) {
+        console.log('[YT-extract] DOM page data is for video', pageData.parsedVideoId, 'but expected', expectedVideoId, '— skipping stale DOM data');
+        return {};
+      }
+      return pageData;
     } catch (error) {
       console.error('Error reading YouTube page data from DOM:', error);
       return {};
@@ -265,6 +273,7 @@ window.SummarizerExtractors = (() => {
 
   function parseYouTubePageData(playerHtml, configHtml) {
     let captionTracks = null;
+    let parsedVideoId = null;
     if (playerHtml) {
       const marker = 'ytInitialPlayerResponse';
       const markerIdx = playerHtml.indexOf(marker);
@@ -277,6 +286,7 @@ window.SummarizerExtractors = (() => {
               const playerResponse = JSON.parse(jsonStr);
               captionTracks = playerResponse?.captions
                 ?.playerCaptionsTracklistRenderer?.captionTracks || null;
+              parsedVideoId = playerResponse?.videoDetails?.videoId || null;
             } catch { /* ignore parse errors */ }
           }
         }
@@ -308,7 +318,7 @@ window.SummarizerExtractors = (() => {
       }
     }
 
-    return { captionTracks, innertubeContext, getTranscriptParams };
+    return { captionTracks, innertubeContext, getTranscriptParams, parsedVideoId };
   }
 
   function extractBalancedJSON(str, start) {
@@ -410,7 +420,7 @@ window.SummarizerExtractors = (() => {
     // panel in the MAIN world and read the text from the DOM. This works
     // regardless of YouTube's caption URL format (including variant=gemini).
     const panelResult = await new Promise(resolve => {
-      chrome.runtime.sendMessage({ action: 'getYouTubeTranscript' }, resolve);
+      chrome.runtime.sendMessage({ action: 'getYouTubeTranscript', videoId }, resolve);
     });
     if (panelResult?.transcript) return panelResult.transcript;
 
@@ -418,7 +428,7 @@ window.SummarizerExtractors = (() => {
 
     // Fallback: parse caption track URLs from page data and fetch XML directly.
     // This handles older YouTube pages that still serve standard timedtext XML.
-    let pageData = getYouTubePageDataFromDOM();
+    let pageData = getYouTubePageDataFromDOM(videoId);
     if (!pageData.captionTracks?.length && !pageData.getTranscriptParams) {
       pageData = await fetchYouTubePageDataFromNetwork(videoId);
     }
@@ -440,6 +450,68 @@ window.SummarizerExtractors = (() => {
     );
   }
 
+  function extractGmailEmail() {
+    // Detect if viewing an individual email or thread.
+    // Gmail hash patterns: #inbox/FMfcgz... or #sent/FMfcgz... for email views.
+    const hash = window.location.hash;
+    const isEmailView = /^#[a-z]+\/[A-Za-z0-9]/.test(hash);
+
+    if (!isEmailView) {
+      throw new Error('Please open an individual email to summarise it. Inbox and settings views are not supported.');
+    }
+
+    const subject = document.querySelector('h2[data-thread-perm-id]')?.textContent?.trim()
+      || document.querySelector('h2.hP')?.textContent?.trim()
+      || document.title.replace(/ - [^-]+@[^-]+ - Gmail$/, '').trim();
+
+    if (!subject) {
+      throw new Error('Could not find an email subject. Please make sure you have an email open.');
+    }
+
+    const sender = findGmailSender() || 'Unknown sender';
+
+    // Extract email bodies — handle threads with multiple messages
+    let bodyElements = document.querySelectorAll('.a3s.aiL');
+    if (!bodyElements.length) {
+      bodyElements = document.querySelectorAll('.ii.gt');
+    }
+    if (!bodyElements.length) {
+      throw new Error('Could not extract email content. The email may still be loading—try again in a moment.');
+    }
+
+    const parts = [];
+    bodyElements.forEach((body, index) => {
+      const emailContainer = body.closest('.gs');
+      let emailSender = sender;
+      let emailDate = '';
+
+      if (emailContainer) {
+        const senderEl = emailContainer.querySelector('span.gD[name]');
+        if (senderEl) emailSender = senderEl.getAttribute('name') || sender;
+        const dateEl = emailContainer.querySelector('span.g3');
+        if (dateEl) emailDate = dateEl.getAttribute('title') || dateEl.textContent || '';
+      }
+
+      const text = body.textContent?.trim();
+      if (!text) return;
+
+      if (bodyElements.length > 1) {
+        parts.push('[Email ' + (index + 1) + ' from ' + emailSender + (emailDate ? ' on ' + emailDate : '') + ']\n' + text);
+      } else {
+        parts.push(text);
+      }
+    });
+
+    const content = parts.join('\n\n---\n\n');
+    if (!content) {
+      throw new Error('Email content appears to be empty.');
+    }
+
+    const { wordCount, readingTimeMinutes } = calculateWordStats(content);
+
+    return { title: subject, author: sender, content, wordCount, readingTimeMinutes };
+  }
+
   return {
     calculateWordStats,
     extractArticle,
@@ -448,6 +520,7 @@ window.SummarizerExtractors = (() => {
     getDomainName,
     applySiteRules,
     extractYouTubeTranscript,
+    extractGmailEmail,
   };
 
 })();

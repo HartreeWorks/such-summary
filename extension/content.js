@@ -15,7 +15,8 @@
   } = window.SummarizerMarkdown;
 
   const {
-    calculateWordStats, extractArticle: extractArticleFromPage, getDomainName, extractYouTubeTranscript,
+    calculateWordStats, extractArticle: extractArticleFromPage, getDomainName,
+    extractYouTubeTranscript, extractGmailEmail,
   } = window.SummarizerExtractors;
 
   const VALID_SECTION_TYPES = ['tldr', 'concise', 'quotes'];
@@ -1183,6 +1184,27 @@
       }
     }
 
+    async handleGmail() {
+      this.showProgressiveLoading();
+      try {
+        const article = this._applyTestWordCountOverride(extractGmailEmail());
+        this.currentArticle = article;
+        this.updateLoadingStats(article.wordCount, article.readingTimeMinutes);
+
+        const warningResult = await this.checkLargeContentWarning(article.wordCount);
+        if (!warningResult.proceed) return;
+
+        safeSendMessage({
+          action: 'getSummary',
+          article: this.currentArticle,
+          requestedSummaryType: warningResult.requestedSummaryType,
+        });
+      } catch (error) {
+        this.hideLoading();
+        this.showErrorMessage(error.message);
+      }
+    }
+
     // --- Caching ---
 
     hasProgressiveSummaries() {
@@ -1211,28 +1233,41 @@
     }
 
     isCachedSummaryForCurrentUrl() {
-      return this.cachedUrl ? this.cachedUrl === window.location.href : false;
+      return this.cachedUrl ? this.cachedUrl === getNormalizedCacheUrl() : false;
     }
+  }
+
+  function getNormalizedCacheUrl() {
+    const hostname = window.location.hostname;
+    if (hostname === 'www.youtube.com' || hostname === 'youtube.com') {
+      const videoId = new URLSearchParams(window.location.search).get('v');
+      if (videoId) return 'https://www.youtube.com/watch?v=' + videoId;
+    }
+    return window.location.href;
   }
 
   // --- Initialisation ---
 
   window.articleSummarizerInstance = new ArticleSummarizer();
 
-  let currentUrl = window.location.href;
+  let currentUrl = getNormalizedCacheUrl();
 
   // Detect SPA-style URL changes to invalidate cached summaries.
+  // Uses normalised URLs so YouTube playlist param changes (same video) don't
+  // unnecessarily clear the cache.
   if (typeof navigation !== 'undefined') {
     navigation.addEventListener('navigate', () => {
-      if (window.location.href !== currentUrl) {
-        currentUrl = window.location.href;
+      const normalized = getNormalizedCacheUrl();
+      if (normalized !== currentUrl) {
+        currentUrl = normalized;
         window.articleSummarizerInstance.clearCachedSummary();
       }
     });
   } else {
     setInterval(() => {
-      if (window.location.href !== currentUrl) {
-        currentUrl = window.location.href;
+      const normalized = getNormalizedCacheUrl();
+      if (normalized !== currentUrl) {
+        currentUrl = normalized;
         window.articleSummarizerInstance.clearCachedSummary();
       }
     }, 1000);
@@ -1257,6 +1292,17 @@
         return;
       }
       if (request.action === 'summarize') {
+        // Cache check first — applies to all sites including YouTube
+        if (window.articleSummarizerInstance.hasProgressiveSummaries() &&
+            window.articleSummarizerInstance.isCachedSummaryForCurrentUrl()) {
+          if (window.articleSummarizerInstance.modal?.getAttribute('data-visible') === 'true') {
+            window.articleSummarizerInstance.cycleSummaryType();
+          } else {
+            window.articleSummarizerInstance.showExistingProgressiveSummaries();
+          }
+          return;
+        }
+
         if (window.location.hostname === 'www.youtube.com' || window.location.hostname === 'youtube.com') {
           window.articleSummarizerInstance.handleYouTube();
           return;
@@ -1272,13 +1318,8 @@
           return;
         }
 
-        if (window.articleSummarizerInstance.hasProgressiveSummaries() &&
-            window.articleSummarizerInstance.isCachedSummaryForCurrentUrl()) {
-          if (window.articleSummarizerInstance.modal?.getAttribute('data-visible') === 'true') {
-            window.articleSummarizerInstance.cycleSummaryType();
-          } else {
-            window.articleSummarizerInstance.showExistingProgressiveSummaries();
-          }
+        if (window.location.hostname === 'mail.google.com') {
+          window.articleSummarizerInstance.handleGmail();
           return;
         }
 
@@ -1312,7 +1353,7 @@
         }
         window.articleSummarizerInstance.showProgressiveSummary(request.type, request.summary, request.model, request.timeMs, request.showSettingsLink);
         if (!window.articleSummarizerInstance.cachedUrl) {
-          window.articleSummarizerInstance.cachedUrl = window.location.href;
+          window.articleSummarizerInstance.cachedUrl = getNormalizedCacheUrl();
         }
       } else if (request.action === 'noApiKey') {
         window.articleSummarizerInstance.showNoApiKeyError();

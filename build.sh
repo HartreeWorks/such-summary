@@ -170,5 +170,13 @@ echo ""
 echo "-> $BUILD_DIR/$ZIP_NAME"
 echo "-> $EXTRACT_DIR"
 
+# ── Auto-commit manifest version bump if changed ─────────────
+if git diff --quiet "$SRC_DIR/manifest.json" 2>/dev/null; then
+  : # no changes
+else
+  git add "$SRC_DIR/manifest.json"
+  git commit -m "bump version to $VERSION"
+fi
+
 # ── Sync to public GitHub repo ───────────────────────────────
 bash sync-public.sh

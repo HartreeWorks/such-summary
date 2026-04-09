@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Such Summary",
   "version": "1.3.1",
-  "description": "Progressive summarisation for web pages, PDFs, Google Docs and YouTube videos. Just press Option + S.",
+  "description": "Progressive summarisation for web pages, PDFs, Google Docs, YouTube videos and Gmail emails. Just press Option + S.",
   "permissions": [
     "activeTab",
     "storage",

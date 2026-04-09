@@ -269,8 +269,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const results = await chrome.scripting.executeScript({
           target: { tabId: sender.tab.id },
           world: 'MAIN',
-          func: async () => {
+          args: [request.videoId || null],
+          func: async (expectedVideoId) => {
             try {
+              // Verify the page is showing the expected video (guards against
+              // stale transcript panel content after YouTube SPA navigation)
+              if (expectedVideoId) {
+                const currentVideoId = document.querySelector('ytd-watch-flexy')?.getAttribute('video-id')
+                  || new URLSearchParams(window.location.search).get('v');
+                if (currentVideoId && currentVideoId !== expectedVideoId) {
+                  return { error: 'Video ID mismatch: page shows ' + currentVideoId + ' but expected ' + expectedVideoId };
+                }
+              }
+
               // Open the transcript panel
               const panel = document.querySelector(
                 'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]'
