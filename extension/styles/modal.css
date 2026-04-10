@@ -1011,6 +1011,26 @@
   }
 }
 
+/* Truncation notice (shown when content exceeds model context window) */
+.ph-summarizer-truncation-notice {
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #1E40AF;
+  line-height: 1.4;
+}
+
+@media (prefers-color-scheme: dark) {
+  .ph-summarizer-truncation-notice {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #93C5FD;
+  }
+}
+
 .ph-summarizer-model-switch-notice {
   background: #EFF6FF;
   border: 1px solid #BFDBFE;

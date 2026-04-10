@@ -544,6 +544,9 @@ async function summariseArticle(article, tabId, tabUrl, options = {}) {
           model: result.model,
           timeMs: result.timeMs,
           sourceUrl: tabUrl,
+          truncated: result.truncated,
+          truncatedWordCount: result.truncatedWordCount,
+          originalWordCount: result.originalWordCount,
         });
       } catch (error) {
         if (error.name === 'AbortError') return;
