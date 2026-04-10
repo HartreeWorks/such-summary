@@ -672,7 +672,7 @@
       this._showFooter();
     }
 
-    showProgressiveSummary(type, summary, model, timeMs, showSettingsLink) {
+    showProgressiveSummary(type, summary, model, timeMs, showSettingsLink, { truncated, truncatedWordCount, originalWordCount } = {}) {
       if (!VALID_SECTION_TYPES.includes(type)) return;
       const sectionContent = this.shadowRoot.querySelector(`.${type}-section .summary-section-content`);
       const copyButton = this.shadowRoot.querySelector(`.${type}-section .ph-summarizer-section-copy`);
@@ -721,6 +721,15 @@
           // blocks javascript:/data:/vbscript: href schemes on any anchors.
           sectionContent.innerHTML = renderMarkdown(summary);
           sanitiseHrefsDOM(sectionContent);
+
+          if (truncated && truncatedWordCount && originalWordCount) {
+            const notice = document.createElement('div');
+            notice.className = 'ph-summarizer-truncation-notice';
+            const k = (n) => n >= 1000 ? Math.round(n / 1000) + 'k' : String(n);
+            notice.textContent = `Document truncated to first ~${k(truncatedWordCount)} of ${k(originalWordCount)} words to fit model context window.`;
+            sectionContent.insertBefore(notice, sectionContent.firstChild);
+          }
+
           if (copyButton) copyButton.style.display = 'flex';
 
           if (modelInfo && model && timeMs) {
@@ -1351,7 +1360,11 @@
           console.log('Ignoring stale summary result for', request.sourceUrl);
           return;
         }
-        window.articleSummarizerInstance.showProgressiveSummary(request.type, request.summary, request.model, request.timeMs, request.showSettingsLink);
+        window.articleSummarizerInstance.showProgressiveSummary(request.type, request.summary, request.model, request.timeMs, request.showSettingsLink, {
+          truncated: request.truncated,
+          truncatedWordCount: request.truncatedWordCount,
+          originalWordCount: request.originalWordCount,
+        });
         if (!window.articleSummarizerInstance.cachedUrl) {
           window.articleSummarizerInstance.cachedUrl = getNormalizedCacheUrl();
         }

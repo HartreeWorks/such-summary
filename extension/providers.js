@@ -9,6 +9,12 @@ const DEFAULT_PRICING = {
   'claude-haiku-4-5':       { input: 1.00,  output: 5.00 },
 };
 
+// Max input context window per model (tokens).
+const MODEL_CONTEXT_LIMITS = {
+  'claude-opus-4-6':   1_000_000,
+  'claude-haiku-4-5':  200_000,
+};
+
 const PRICING_ENDPOINT = 'https://wow.pjh.is/such-summary/api/pricing.json';
 const PRICING_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -187,6 +193,27 @@ Audience assumptions
 // Template rendering
 // ---------------------------------------------------------------------------
 
+// Truncate article content if estimated tokens exceed the model's context window.
+// Returns { content, truncated, originalWordCount } where truncated is true if
+// content was shortened to fit.
+function maybeTruncateForModel(article, model, maxOutputTokens) {
+  const contextLimit = MODEL_CONTEXT_LIMITS[model] || 200_000;
+  // Reserve tokens for: output, system prompt (~500), and a 5% safety margin.
+  const safeInputLimit = Math.floor((contextLimit - maxOutputTokens - 500) * 0.95);
+  const estimatedTokens = Math.round((article.wordCount || 0) * 1.3) + 500;
+
+  if (estimatedTokens <= safeInputLimit) {
+    return { content: article.content || '', truncated: false, originalWordCount: article.wordCount };
+  }
+
+  // Back-derive the max word count that fits within safeInputLimit.
+  const maxWords = Math.floor((safeInputLimit - 500) / 1.3);
+  const words = (article.content || '').split(/\s+/);
+  const truncatedContent = words.slice(0, maxWords).join(' ');
+
+  return { content: truncatedContent, truncated: true, originalWordCount: article.wordCount, truncatedWordCount: maxWords };
+}
+
 // Split prompt into system (instructions) and user (article content) messages.
 function renderPromptParts(template, article) {
   const articleText = `Title: ${article.title || 'Untitled'}
@@ -333,10 +360,15 @@ async function summarise(provider, apiKey, model, summaryType, article, customPr
 
   const template = substituteTierVars(rawTemplate, tier);
 
-  const { system, user } = renderPromptParts(template, article);
   const baseMaxTokens = BASE_MAX_TOKENS[summaryType] || 1024;
   const tierMultiplier = TIER_TOKEN_MULTIPLIER[tier.tier] || 1;
   const maxTokens = Math.round(baseMaxTokens * tierMultiplier);
+
+  // Truncate content if it would exceed the model's context window.
+  const truncation = maybeTruncateForModel(article, model, maxTokens);
+  const truncatedArticle = { ...article, content: truncation.content };
+
+  const { system, user } = renderPromptParts(template, truncatedArticle);
 
   const caller = PROVIDER_CALLERS[provider];
   if (!caller) {
@@ -363,6 +395,9 @@ async function summarise(provider, apiKey, model, summaryType, article, customPr
     timeMs,
     inputTokens: result.inputTokens,
     outputTokens: result.outputTokens,
+    truncated: truncation.truncated,
+    truncatedWordCount: truncation.truncatedWordCount,
+    originalWordCount: truncation.originalWordCount,
   };
 }
 
